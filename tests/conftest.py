@@ -6,6 +6,13 @@ REGISTRATION_URL = f'{BASE_URL}/#/auth/registration'
 STATE_PATH = 'browser-state.json'
 
 
+@pytest.fixture
+def chromium_page(playwright: Playwright) -> Page:
+    browser = playwright.chromium.launch(headless=False)
+    yield browser.new_page()
+    browser.close()
+
+
 @pytest.fixture(scope='session')
 def initialize_browser_state(playwright: Playwright):
     browser = playwright.chromium.launch(headless=False)
