@@ -1,3 +1,4 @@
+import pytest
 from playwright.sync_api import sync_playwright, expect
 
 BASE_URL = 'https://nikita-filonov.github.io/qa-automation-engineer-ui-course'
@@ -6,6 +7,8 @@ COURSES_URL = f'{BASE_URL}/#/courses'
 STATE_PATH = 'browser-state.json'
 
 
+@pytest.mark.courses
+@pytest.mark.regression
 def test_empty_courses_list():
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=False)
