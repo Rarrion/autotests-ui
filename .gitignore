@@ -22,6 +22,7 @@ dist/
 .pytest_cache/
 allure-results/
 allure-report/
+tracing/
 playwright-report/
 test-results/
 *.log
