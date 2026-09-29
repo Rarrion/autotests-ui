@@ -1,10 +1,10 @@
-import allure
 import pytest
 from _pytest.fixtures import SubRequest
 from playwright.sync_api import Playwright, Page
 
 from pages.authentication.registration_page import RegistrationPage
 from pages.dashboard.dashboard_page import DashboardPage
+from tools.playwright.pages import initialize_playwright_page
 
 BASE_URL = 'https://nikita-filonov.github.io/qa-automation-engineer-ui-course'
 REGISTRATION_URL = f'{BASE_URL}/#/auth/registration'
@@ -13,17 +13,7 @@ STATE_PATH = 'browser-state.json'
 
 @pytest.fixture
 def chromium_page(request: SubRequest, playwright: Playwright) -> Page:
-    browser = playwright.chromium.launch(headless=False)
-    context = browser.new_context()
-    context.tracing.start(screenshots=True, snapshots=True, sources=True)
-
-    yield context.new_page()
-
-    # request.node.name - имя текущего автотеста, по нему называем файл трейсинга
-    context.tracing.stop(path=f'./tracing/{request.node.name}.zip')
-    browser.close()
-
-    allure.attach.file(f'./tracing/{request.node.name}.zip', name='trace', extension='zip')
+    yield from initialize_playwright_page(playwright, test_name=request.node.name)
 
 
 @pytest.fixture(scope='session')
@@ -47,13 +37,8 @@ def initialize_browser_state(playwright: Playwright):
 
 @pytest.fixture
 def chromium_page_with_state(initialize_browser_state, request: SubRequest, playwright: Playwright) -> Page:
-    browser = playwright.chromium.launch(headless=False)
-    context = browser.new_context(storage_state=STATE_PATH)
-    context.tracing.start(screenshots=True, snapshots=True, sources=True)
-
-    yield context.new_page()
-
-    context.tracing.stop(path=f'./tracing/{request.node.name}.zip')
-    browser.close()
-
-    allure.attach.file(f'./tracing/{request.node.name}.zip', name='trace', extension='zip')
+    yield from initialize_playwright_page(
+        playwright,
+        test_name=request.node.name,
+        storage_state=STATE_PATH
+    )

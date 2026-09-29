@@ -23,6 +23,7 @@ dist/
 allure-results/
 allure-report/
 tracing/
+videos/
 playwright-report/
 test-results/
 *.log
