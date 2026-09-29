@@ -2,13 +2,11 @@ import pytest
 from _pytest.fixtures import SubRequest
 from playwright.sync_api import Playwright, Page
 
+from config import settings
 from pages.authentication.registration_page import RegistrationPage
 from pages.dashboard.dashboard_page import DashboardPage
 from tools.playwright.pages import initialize_playwright_page
-
-BASE_URL = 'https://nikita-filonov.github.io/qa-automation-engineer-ui-course'
-REGISTRATION_URL = f'{BASE_URL}/#/auth/registration'
-STATE_PATH = 'browser-state.json'
+from tools.routes import AppRoute
 
 
 @pytest.fixture
@@ -18,20 +16,24 @@ def chromium_page(request: SubRequest, playwright: Playwright) -> Page:
 
 @pytest.fixture(scope='session')
 def initialize_browser_state(playwright: Playwright):
-    browser = playwright.chromium.launch(headless=False)
-    context = browser.new_context()
+    browser = playwright.chromium.launch(headless=settings.headless)
+    context = browser.new_context(base_url=settings.get_base_url())
     page = context.new_page()
 
     registration_page = RegistrationPage(page=page)
-    registration_page.visit(REGISTRATION_URL)
-    registration_page.registration_form.fill(email='user.name@gmail.com', username='username', password='password')
+    registration_page.visit(AppRoute.REGISTRATION)
+    registration_page.registration_form.fill(
+        email=settings.test_user.email,
+        username=settings.test_user.username,
+        password=settings.test_user.password
+    )
     registration_page.click_registration_button()
 
     # Дожидаемся редиректа на Dashboard, чтобы состояние сохранилось уже после регистрации
     dashboard_page = DashboardPage(page=page)
     dashboard_page.dashboard_toolbar_view.check_visible()
 
-    context.storage_state(path=STATE_PATH)
+    context.storage_state(path=settings.browser_state_file)
     browser.close()
 
 
@@ -40,5 +42,5 @@ def chromium_page_with_state(initialize_browser_state, request: SubRequest, play
     yield from initialize_playwright_page(
         playwright,
         test_name=request.node.name,
-        storage_state=STATE_PATH
+        storage_state=settings.browser_state_file
     )

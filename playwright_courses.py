@@ -1,32 +1,30 @@
 from playwright.sync_api import sync_playwright, expect
 
-BASE_URL = 'https://nikita-filonov.github.io/qa-automation-engineer-ui-course'
-REGISTRATION_URL = f'{BASE_URL}/#/auth/registration'
-COURSES_URL = f'{BASE_URL}/#/courses'
-STATE_PATH = 'browser-state.json'
+from config import settings
+from tools.routes import AppRoute
 
 with sync_playwright() as playwright:
-    browser = playwright.chromium.launch(headless=False)
+    browser = playwright.chromium.launch(headless=settings.headless)
 
-    context = browser.new_context()
+    context = browser.new_context(base_url=settings.get_base_url())
     page = context.new_page()
 
-    page.goto(REGISTRATION_URL)
+    page.goto(AppRoute.REGISTRATION)
 
     email_input = page.get_by_test_id(
         'registration-form-email-input'
     ).locator('input')
-    email_input.fill('user.name@gmail.com')
+    email_input.fill(settings.test_user.email)
 
     username_input = page.get_by_test_id(
         'registration-form-username-input'
     ).locator('input')
-    username_input.fill('username')
+    username_input.fill(settings.test_user.username)
 
     password_input = page.get_by_test_id(
         'registration-form-password-input'
     ).locator('input')
-    password_input.fill('password')
+    password_input.fill(settings.test_user.password)
 
     registration_button = page.get_by_test_id(
         'registration-page-registration-button'
@@ -36,12 +34,15 @@ with sync_playwright() as playwright:
     dashboard_title = page.get_by_test_id('dashboard-toolbar-title-text')
     expect(dashboard_title).to_be_visible()
 
-    context.storage_state(path=STATE_PATH)
+    context.storage_state(path=settings.browser_state_file)
 
-    new_context = browser.new_context(storage_state=STATE_PATH)
+    new_context = browser.new_context(
+        base_url=settings.get_base_url(),
+        storage_state=settings.browser_state_file
+    )
     new_page = new_context.new_page()
 
-    new_page.goto(COURSES_URL)
+    new_page.goto(AppRoute.COURSES)
 
     courses_title = new_page.get_by_test_id('courses-list-toolbar-title-text')
     expect(courses_title).to_be_visible()
