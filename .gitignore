@@ -33,6 +33,12 @@ test-results/
 *.html
 *.json
 
+# Покрытие UI (ui-coverage-tool): HTML/JSON-отчеты, история и промежуточные результаты
+coverage.html
+coverage-results/
+coverage-report.json
+coverage-history.json
+
 # Секреты и локальные настройки
 # .env намеренно не игнорируется: он нужен для запуска автотестов на CI
 # (GitHub Actions, GitLab CI) и не содержит секретов - только учебные настройки

@@ -9,6 +9,9 @@ on:
   pull_request:
     branches:
       - main  # Запускать workflow, когда будет сделан pull request в ветку main
+  # Ручной запуск из интерфейса GitHub (Actions → UI tests → Run workflow):
+  # позволяет запустить workflow несколько раз без новых коммитов и накопить историю покрытия
+  workflow_dispatch:
 
 # Даем токену GITHUB_TOKEN право на запись в репозиторий: оно нужно для публикации отчета в ветку gh-pages.
 # Благодаря этому не нужно менять настройки репозитория (Settings → Actions → General → Workflow permissions)
@@ -50,7 +53,41 @@ jobs:
         run: |
           pytest -m regression --alluredir=allure-results --numprocesses 2  # Запускаем тесты, отмеченные как "regression", генерируем результаты для Allure
 
-      # 5. Шаг для сохранения папки allure-results как артефакта, чтобы передать ее в джобу publish-report
+      # 5. Шаг для восстановления истории покрытия UI из кеша (до генерации отчета, чтобы использовать данные прошлых запусков)
+      - name: Restore Coverage history
+        uses: actions/cache/restore@v6  # Используем GitHub Action для восстановления файлов из кеша
+        with:
+          path: coverage-history.json  # Файл с историей покрытия
+          key: coverage-history-${{ github.run_id }}  # Уникальный ключ кеша для текущего запуска workflow
+          # Если точного совпадения по ключу нет (новый запуск), восстанавливаем самый свежий кеш с префиксом coverage-history-
+          restore-keys: |
+            coverage-history-
+
+      # 6. Шаг для генерации HTML-отчета покрытия (coverage.html) и обновления истории (coverage-history.json)
+      - name: Generate Coverage report
+        run: |
+          ui-coverage-tool save-report  # Собираем отчет из JSON-файлов в папке coverage-results
+
+      # 7. Шаг для сохранения обновленной истории покрытия обратно в кеш, чтобы ее подхватил следующий запуск
+      - name: Cache Coverage history
+        if: always()  # Всегда выполняем, независимо от успеха или неудачи предыдущих шагов
+        uses: actions/cache/save@v6  # Используем GitHub Action для сохранения файлов в кеш
+        with:
+          path: coverage-history.json  # Файл с историей покрытия
+          key: coverage-history-${{ github.run_id }}  # Уникальный ключ кеша для текущего запуска workflow
+
+      # 8. Шаг для сохранения отчета покрытия как артефакта, чтобы его можно было скачать и открыть в браузере
+      - name: Upload Coverage report
+        if: always()  # Всегда выполняем, независимо от успеха или неудачи предыдущих шагов
+        uses: actions/upload-artifact@v7  # Используем GitHub Action для загрузки артефактов
+        with:
+          name: coverage-report  # Имя артефакта
+          # HTML-отчет покрытия и файл истории покрытия, с которым он был построен
+          path: |
+            coverage.html
+            coverage-history.json
+
+      # 9. Шаг для сохранения папки allure-results как артефакта, чтобы передать ее в джобу publish-report
       - name: Upload Allure results
         if: ${{ !cancelled() }}  # Сохраняем результаты и при упавших тестах, чтобы отчет показал ошибки
         uses: actions/upload-artifact@v7  # Используем GitHub Action для загрузки артефактов
