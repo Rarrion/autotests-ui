@@ -28,8 +28,6 @@ playwright-report/
 test-results/
 *.log
 # Генерируемые при запуске файлы: browser-state.json, html-отчеты и т.п.
-# Уже закоммиченные отчеты (chromium-webkit/index.html и др.) остаются в репозитории:
-# .gitignore не действует на файлы, которые Git уже отслеживает
 *.html
 *.json
 
